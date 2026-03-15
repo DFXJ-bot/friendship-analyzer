@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>朋友圈军师 · AI交友助手</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            max-width: 500px;
+            width: 100%;
+            margin: 0 auto;
+            background: white;
+            border-radius: 32px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 16px;
+            opacity: 0.95;
+        }
+
+        .content {
+            padding: 24px 20px;
+        }
+
+        /* 上传区域 */
+        .upload-area {
+            border: 3px dashed #d9e2ef;
+            border-radius: 20px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #f8faff;
+            margin-bottom: 20px;
+        }
+
+        .upload-area:hover {
+            border-color: #4facfe;
+            background: #f0f8ff;
+        }
+
+        .upload-area.dragover {
+            border-color: #4facfe;
+            background: #e8f0fe;
+            transform: scale(1.02);
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+            color: #4facfe;
+        }
+
+        .upload-text {
+            font-size: 18px;
+            color: #333;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .upload-hint {
+            font-size: 14px;
+            color: #888;
+        }
+
+        .upload-hint strong {
+            color: #4facfe;
+        }
+
+        /* 预览区域 */
+        .preview-section {
+            margin-top: 20px;
+            display: none;
+        }
+
+        .preview-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            font-size: 16px;
+            color: #666;
+        }
+
+        .preview-count {
+            background: #4facfe;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-size: 14px;
+        }
+
+        .preview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .preview-item {
+            position: relative;
+            aspect-ratio: 1;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .preview-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .preview-item .remove-btn {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            width: 24px;
+            height: 24px;
+            background: rgba(255, 71, 87, 0.9);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .preview-item .remove-btn:hover {
+            background: #ff4757;
+        }
+
+        /* 分析按钮 */
+        .analyze-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            border: none;
+            padding: 16px;
+            font-size: 18px;
+            font-weight: 600;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(79, 172, 254, 0.3);
+            margin: 20px 0;
+        }
+
+        .analyze-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(79, 172, 254, 0.4);
+        }
+
+        .analyze-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        /* 结果区域 */
+        .result-section {
+            display: none;
+            margin-top: 20px;
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .result-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .back-btn {
+            background: #f0f0f0;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 30px;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .back-btn:hover {
+            background: #e0e0e0;
+        }
+
+        .result-content {
+            background: #f8faff;
+            border-radius: 20px;
+            padding: 24px;
+            line-height: 1.8;
+            color: #333;
+            white-space: pre-wrap;
+        }
+
+        .result-content h3 {
+            color: #4facfe;
+            margin: 20px 0 10px;
+            font-size: 18px;
+        }
+
+        .result-content h3:first-child {
+            margin-top: 0;
+        }
+
+        .result-content ul {
+            margin-left: 20px;
+            margin-bottom: 15px;
+        }
+
+        .result-content li {
+            margin-bottom: 5px;
+        }
+
+        /* 加载动画 */
+        .loading {
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #f0f0f0;
+            border-top: 4px solid #4facfe;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            color: #666;
+            font-size: 16px;
+        }
+
+        /* 消息提示 */
+        .message {
+            padding: 12px 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .message.error {
+            background: #fff2f0;
+            color: #ff4757;
+            border-left: 4px solid #ff4757;
+        }
+
+        .message.success {
+            background: #f0fff4;
+            color: #00c853;
+            border-left: 4px solid #00c853;
+        }
+
+        /* 页脚 */
+        .footer {
+            margin-top: 24px;
+            padding: 0 20px 20px;
+            text-align: center;
+            color: #999;
+            font-size: 12px;
+        }
+
+        .footer p {
+            margin-bottom: 4px;
+        }
+
+        /* 隐藏的文件输入 */
+        #fileInput {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 朋友圈军师</h1>
+            <p>上传TA的5张以上朋友圈截图，获取追求建议</p>
+        </div>
+
+        <div class="content">
+            <!-- 文件输入框（隐藏） -->
+            <input type="file" id="fileInput" multiple accept="image/jpeg,image/png,image/gif,image/webp">
+
+            <!-- 上传区域 -->
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon">📸</div>
+                <div class="upload-text">点击或拖拽上传截图</div>
+                <div class="upload-hint">支持 JPG/PNG/GIF，至少<strong>5张</strong></div>
+            </div>
+
+            <!-- 预览区域 -->
+            <div class="preview-section" id="previewSection">
+                <div class="preview-title">
+                    <span>已上传图片</span>
+                    <span class="preview-count" id="imageCount">0/5</span>
+                </div>
+                <div class="preview-grid" id="previewGrid"></div>
+            </div>
+
+            <!-- 分析按钮 -->
+            <button class="analyze-btn" id="analyzeBtn" disabled>✨ 开始分析</button>
+
+            <!-- 结果区域 -->
+            <div class="result-section" id="resultSection">
+                <div class="result-header">
+                    <span class="result-title">🎯 AI分析结果</span>
+                    <button class="back-btn" id="backBtn">← 重新上传</button>
+                </div>
+                <div class="result-content" id="resultContent"></div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>AI分析仅供参考，最终交往需自行判断</p>
+            <p>所有图片仅用于本次分析，不会被保存</p>
+        </div>
+    </div>
+
+    <script>
+        // ==================== 完整的前端交互代码 ====================
+        class FriendshipAnalyzer {
+            constructor() {
+                this.images = [];
+                this.init();
+            }
+
+            init() {
+                this.getElements();
+                this.setupEventListeners();
+                this.updateUI();
+                console.log('应用初始化成功！');
+            }
+
+            getElements() {
+                this.uploadArea = document.getElementById('uploadArea');
+                this.fileInput = document.getElementById('fileInput');
+                this.previewSection = document.getElementById('previewSection');
+                this.previewGrid = document.getElementById('previewGrid');
+                this.imageCount = document.getElementById('imageCount');
+                this.analyzeBtn = document.getElementById('analyzeBtn');
+                this.resultSection = document.getElementById('resultSection');
+                this.resultContent = document.getElementById('resultContent');
+                this.backBtn = document.getElementById('backBtn');
+                
+                // 检查元素是否存在
+                console.log('上传区域:', this.uploadArea);
+                console.log('文件输入:', this.fileInput);
+            }
+
+            setupEventListeners() {
+                // 点击上传区域
+                if (this.uploadArea) {
+                    this.uploadArea.addEventListener('click', (e) => {
+                        console.log('点击上传区域');
+                        this.fileInput.click();
+                    });
+                }
+
+                // 选择文件
+                if (this.fileInput) {
+                    this.fileInput.addEventListener('change', (e) => {
+                        console.log('选择了文件:', e.target.files.length);
+                        this.handleFiles(e.target.files);
+                    });
+                }
+
+                // 拖拽事件
+                if (this.uploadArea) {
+                    this.uploadArea.addEventListener('dragover', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        this.uploadArea.classList.add('dragover');
+                    });
+
+                    this.uploadArea.addEventListener('dragleave', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        this.uploadArea.classList.remove('dragover');
+                    });
+
+                    this.uploadArea.addEventListener('drop', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        this.uploadArea.classList.remove('dragover');
+                        console.log('拖拽文件:', e.dataTransfer.files.length);
+                        this.handleFiles(e.dataTransfer.files);
+                    });
+                }
+
+                // 分析按钮
+                if (this.analyzeBtn) {
+                    this.analyzeBtn.addEventListener('click', () => {
+                        console.log('点击分析按钮');
+                        this.startAnalysis();
+                    });
+                }
+
+                // 返回按钮
+                if (this.backBtn) {
+                    this.backBtn.addEventListener('click', () => {
+                        console.log('点击返回按钮');
+                        this.resetToUpload();
+                    });
+                }
+            }
+
+            handleFiles(files) {
+                const imageFiles = Array.from(files).filter(file => 
+                    file.type.startsWith('image/')
+                );
+
+                console.log('过滤后的图片文件:', imageFiles.length);
+
+                if (imageFiles.length === 0) {
+                    this.showMessage('请选择图片文件', 'error');
+                    return;
+                }
+
+                imageFiles.forEach(file => {
+                    if (file.size > 10 * 1024 * 1024) {
+                        this.showMessage(`${file.name} 超过10MB`, 'error');
+                        return;
+                    }
+                    this.addImage(file);
+                });
+            }
+
+            addImage(file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    this.images.push({
+                        id: Date.now() + Math.random(),
+                        file: file,
+                        url: e.target.result
+                    });
+                    console.log('添加图片，总数:', this.images.length);
+                    this.renderPreview();
+                    this.updateUI();
+                };
+                reader.readAsDataURL(file);
+            }
+
+            removeImage(id) {
+                this.images = this.images.filter(img => img.id !== id);
+                console.log('删除图片，总数:', this.images.length);
+                this.renderPreview();
+                this.updateUI();
+            }
+
+            renderPreview() {
+                if (!this.previewGrid) return;
+                this.previewGrid.innerHTML = '';
+
+                this.images.forEach(img => {
+                    const item = document.createElement('div');
+                    item.className = 'preview-item';
+                    item.innerHTML = `
+                        <img src="${img.url}" alt="预览">
+                        <button class="remove-btn" data-id="${img.id}">×</button>
+                    `;
+                    this.previewGrid.appendChild(item);
+
+                    const btn = item.querySelector('.remove-btn');
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        this.removeImage(img.id);
+                    });
+                });
+            }
+
+            updateUI() {
+                const count = this.images.length;
+                
+                if (this.imageCount) {
+                    this.imageCount.textContent = `${count}/5`;
+                }
+
+                if (this.previewSection) {
+                    this.previewSection.style.display = count > 0 ? 'block' : 'none';
+                }
+
+                if (this.analyzeBtn) {
+                    this.analyzeBtn.disabled = count < 5;
+                }
+            }
+
+            async startAnalysis() {
+                if (this.images.length < 5) {
+                    this.showMessage('请上传至少5张图片', 'error');
+                    return;
+                }
+
+                // 显示结果区域和加载状态
+                this.resultSection.style.display = 'block';
+                this.resultContent.innerHTML = `
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                        <div class="loading-text">AI正在分析中，请稍候...</div>
+                    </div>
+                `;
+
+                try {
+                    const formData = new FormData();
+                    this.images.forEach(img => {
+                        formData.append('images', img.file);
+                    });
+
+                    const response = await fetch('/api/analyze', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const result = await response.json();
+
+                    if (!response.ok) {
+                        throw new Error(result.error || '分析失败');
+                    }
+
+                    this.displayResult(result);
+                } catch (error) {
+                    console.error('分析错误:', error);
+                    this.resultContent.innerHTML = `
+                        <div class="message error">
+                            <strong>❌ 分析失败：</strong>${error.message}
+                        </div>
+                        <button class="back-btn" onclick="analyzer.resetToUpload()">返回重新上传</button>
+                    `;
+                }
+            }
+
+            displayResult(data) {
+                console.log('收到分析结果:', data);
+                
+                let content = '';
+                
+                // 从各种可能的响应格式中提取内容
+                if (data.responses && data.responses[0] && data.responses[0].content) {
+                    content = data.responses[0].content;
+                } else if (data.content) {
+                    content = data.content;
+                } else if (data.output) {
+                    content = data.output;
+                } else if (data.choices && data.choices[0]) {
+                    if (data.choices[0].message && data.choices[0].message.content) {
+                        content = data.choices[0].message.content;
+                    } else if (data.choices[0].text) {
+                        content = data.choices[0].text;
+                    }
+                } else {
+                    content = JSON.stringify(data, null, 2);
+                }
+                
+                // 确保content是字符串
+                content = String(content || '分析完成，但没有具体内容');
+                
+                // 简单的格式化
+                let html = '';
+                const lines = content.split('\n');
+                lines.forEach(line => {
+                    line = line.trim();
+                    if (!line) return;
+                    
+                    if (line.includes('：') || line.includes(':')) {
+                        html += `<h3>${line}</h3>`;
+                    } else if (line.startsWith('-') || line.startsWith('•') || line.startsWith('*')) {
+                        html += `<li>${line.substring(1).trim()}</li>`;
+                    } else {
+                        html += `<p>${line}</p>`;
+                    }
+                });
+
+                if (html.includes('<li>')) {
+                    html = '<ul>' + html + '</ul>';
+                }
+
+                this.resultContent.innerHTML = `
+                    <div class="message success">🎉 分析完成！</div>
+                    ${html || '<p>分析完成，但结果为空</p>'}
+                `;
+            }
+
+            resetToUpload() {
+                this.images = [];
+                this.fileInput.value = '';
+                this.renderPreview();
+                this.updateUI();
+                this.resultSection.style.display = 'none';
+            }
+
+            showMessage(text, type) {
+                const msg = document.createElement('div');
+                msg.className = `message ${type}`;
+                msg.textContent = text;
+                
+                const content = document.querySelector('.content');
+                content.insertBefore(msg, content.firstChild);
+
+                setTimeout(() => msg.remove(), 3000);
+            }
+        }
+
+        // 等待DOM加载完成后初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('DOM加载完成，初始化应用...');
+            window.analyzer = new FriendshipAnalyzer();
+        });
+    </script>
+</body>
+</html>
